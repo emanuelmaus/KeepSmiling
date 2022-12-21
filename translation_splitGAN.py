@@ -82,10 +82,10 @@ for i, data in enumerate(mtfl_loader, 0):
         print(image.size())
         continue
     
-    #label_value == 0 --> smiling
+    # label_value == 0 --> smiling
     if(label_value == 0):
         feature_vector = netE(image)
-        #Transform it to a 1D-Vector and translate it
+        # Transform it to a 1D-Vector and translate it
         feature_vector = feature_vector.view(-1, 1*128*5*5).transpose(0, 1) - translation_vec
         not_smiling = netDe(feature_vector.view(1,128,5,5))
         save_list = [image, not_smiling]
@@ -95,7 +95,7 @@ for i, data in enumerate(mtfl_loader, 0):
         
     else:
         feature_vector = netE(image)
-        #Transform it to a 1D-Vector
+        # Transform it to a 1D-Vector
         feature_vector = feature_vector.view(-1, 1*128*5*5).transpose(0, 1) + translation_vec
         smiling = netDe(feature_vector.view(1,128,5,5))
         save_list = [image, smiling]

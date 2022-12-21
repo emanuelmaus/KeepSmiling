@@ -54,7 +54,7 @@ cudnn.benchmark = True
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-#Our Dataset
+# Our Dataset
 mtfl_loader = get_loader(opt.dataroot, int(3), int(1), opt.imageSize,
                              opt.batchSize, (opt.mode=='training'), opt.workers)
 
@@ -79,10 +79,10 @@ if opt.netD != '':
     netD.load_state_dict(torch.load(opt.netD))
 print(netD)
 
-#Didnt work, because of instability
+# Didnt work, because of instability
 #criterion = nn.BCEWithLogitsLoss()
 
-#Therefore we used the StableBCELoss (see utils)
+# Therefore we used the StableBCELoss (see utils)
 criterion = StableBCELoss()
 
 # Fetch fixed inputs for debugging.
@@ -92,57 +92,48 @@ x_fixed = x_fixed.to(device)
 labels_fixed = labels_fixed.to(device).view(-1, 1).squeeze(1)
 
 
-# setup optimizer
+# Setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
 for epoch in range(opt.nstart, opt.niter):
     for i, data in enumerate(mtfl_loader, 0):
         ############################
-        #First: update D network
+        # First: update D network
 
-        # train with real
+        # Train with real
         netD.zero_grad()
         x_real = data[0].to(device)
-        #Modified-Smile
+        # Modified-Smile
         label_smile = data[1]
         # Generate target domain labels randomly.
         rand_idx = torch.randperm(label_smile.size(0))
         label_rand = label_smile[rand_idx]
-        #print('HERE')
-        #print(label_rand.size())
-        #print(label_smile.size())
-        #Paste it to cuda
+        # Paste it to cuda
         label_smile = label_smile.to(device).view(-1, 1).squeeze(1)
         label_rand = label_rand.to(device).view(-1, 1).squeeze(1)
-        #print()
         
-        #Compute loss with real images
+        # Compute loss with real images
         output_x1, output_cls1 = netD(x_real)
         
         d_loss_real = - torch.mean(output_x1)
-        
-        #print(output_cls1)
-        #print(label_smile)
+
         d_loss_cls = criterion(output_cls1, label_smile)
         
-        #Compute loss with fake images
+        # Compute loss with fake images
         x_fake = netG(x_real, label_rand)
         output_x2, output_cls2 = netD(x_fake.detach())
         d_loss_fake = torch.mean(output_x2)
         
         # Compute loss for gradient penalty.
         alpha = torch.rand(x_real.size(0), 1, 1, 1).to(device)
-        #print(alpha.size())
-        #print(x_real.data.size())
-        #print(x_fake.data.size())
         x_hat = (alpha * x_real.data + (1 - alpha) * x_fake.data).requires_grad_(True)
         output_x_temp, _ = netD(x_hat)
         d_loss_gp = gradient_penalty(output_x_temp, x_hat, device)
         
         # Backward and optimize.
         d_loss = d_loss_real + d_loss_fake + d_loss_cls + 10 * d_loss_gp
-        #Reset the gradient buffers 
+        # Reset the gradient buffers 
         optimizerD.zero_grad()
         optimizerG.zero_grad()
         
@@ -151,12 +142,12 @@ for epoch in range(opt.nstart, opt.niter):
         ############################
         
         ############################
-        #Second: update G network
+        # Second: update G network
         
-        #train the Generator (1xtraining Generator, 5xtraining Discriminator)
+        # Train the Generator (1xtraining Generator, 5xtraining Discriminator)
         if((i+1) % 5 == 0 or (i==0)):
-            #Original-to-rand domain
-            #train with rand-labels
+            # Original-to-rand domain
+            # Train with rand-labels
             x_fake = netG(x_real, label_rand)
             output_x3, output_cls3 = netD(x_fake)
             g_loss_fake = - torch.mean(output_x3)
@@ -168,7 +159,7 @@ for epoch in range(opt.nstart, opt.niter):
             
             # Backward and optimize.
             g_loss = g_loss_fake + g_loss_cls + 10 * g_loss_rec 
-            #Reset the gradient buffers 
+            # Reset the gradient buffers 
             optimizerG.zero_grad()
             optimizerD.zero_grad()
         
@@ -176,7 +167,7 @@ for epoch in range(opt.nstart, opt.niter):
             optimizerG.step()
 
         ############################
-        #Get Output(states and images)
+        # Get Output(states and images)
 
         print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f / %.4f'
               % (epoch, opt.niter, i, len(mtfl_loader),
@@ -190,6 +181,6 @@ for epoch in range(opt.nstart, opt.niter):
                     '%s/fake_samples_epoch_%03d.png' % (opt.outf, epoch),
                     normalize=True)
 
-    # do checkpointing
+    # Do checkpointing
     torch.save(netG.state_dict(), '%s/netG_folder/netG_epoch_%d.pth' % (opt.outf, epoch))
     torch.save(netD.state_dict(), '%s/netD_folder/netD_epoch_%d.pth' % (opt.outf, epoch))

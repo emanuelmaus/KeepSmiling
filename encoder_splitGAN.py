@@ -53,9 +53,9 @@ if opt.netE != '':
     netE.load_state_dict(torch.load(opt.netE))
 print(netE)
 
-#Calculate the feature vectors
+# Calculate the feature vectors
 
-#Feature_vector
+# Feature_vector
 smiling_feature_vectors = []
 not_smiling_feature_vectors = []
 print(len(mtfl_loader))
@@ -70,28 +70,28 @@ for i, data in enumerate(mtfl_loader, 0):
         print(image.size())
         continue
     
-    #label_value == 0 --> smiling
+    # label_value == 0 --> smiling
     if(label_value == 0):
         feature_vector = netE(image)
-        #Transform it to a 1D-Vector
+        # Transform it to a 1D-Vector
         feature_vector = feature_vector.view(-1, 1*128*5*5).transpose(0, 1)
         smiling_feature_vectors.append(feature_vector)
     else:
         feature_vector = netE(image)
-        #Transform it to a 1D-Vector
+        # Transform it to a 1D-Vector
         feature_vector = feature_vector.view(-1, 1*128*5*5).transpose(0, 1)
         not_smiling_feature_vectors.append(feature_vector)
 
 smile_tensor = torch.stack(smiling_feature_vectors)
 not_smile_tensor = torch.stack(not_smiling_feature_vectors)
 
-#To numpy
+# To numpy
 smile_numpy = smile_tensor.data.cpu().numpy()
 print(smile_numpy.shape)
 not_smile_numpy = not_smile_tensor.data.cpu().numpy()
 print(not_smile_numpy.shape)
 
-#save the numpy array
+# Save the numpy array
 np.save(os.path.join(opt.outf,'smile_vec.npy'), smile_numpy)        
 np.save(os.path.join(opt.outf,'not_smile_vec.npy'), not_smile_numpy)        
     

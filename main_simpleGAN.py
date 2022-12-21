@@ -10,13 +10,13 @@ import torch.optim as optim
 import torch.utils.data
 import torchvision.utils as vutils
 
-#Use the own dataloader
+# Use the own dataloader
 from data_loader import get_loader
 from utils import weights_init  
 from model import Generator, Discriminator
 
 
-#Argumentparser
+# Argumentparser
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataroot', required=True, help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=1)
@@ -52,24 +52,24 @@ if not os.path.exists(subfolder2):
     os.makedirs(subfolder2)
 
 
-#Seeding of the rand-generator
+# Seeding of the rand-generator
 if opt.manualSeed is None:
     opt.manualSeed = random.randint(1, 10000)
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 
-#Cuda
+# Cuda
 cudnn.benchmark = True
 
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-#Our Dataset
+# Our Dataset
 mtfl_loader = get_loader(opt.dataroot, int(3), int(1), opt.imageSize,
                              opt.batchSize, (opt.mode=='training'), opt.workers)
 
-#Needed initialisation
+# Needed initialisation
 device = torch.device("cuda:0" if opt.cuda else "cpu")
 ngpu = int(opt.ngpu)
 nz = int(opt.nz)
@@ -91,26 +91,26 @@ if opt.netD != '':
     netD.load_state_dict(torch.load(opt.netD))
 print(netD)
 
-#Criterion (BCELoss)
+# Criterion (BCELoss)
 criterion = nn.BCELoss()
 
-#Generate the noise vector (siye 100x1x1)
+# Generate the noise vector (siye 100x1x1)
 fixed_noise = torch.randn(opt.batchSize, nz, 1, 1, device=device)
 
-#To generate the labels/fill them
+# To generate the labels/fill them
 real_label = 1
 fake_label = 0
 
-# setup optimizer
+# Setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
 for epoch in range(opt.niter):
     for i, data in enumerate(mtfl_loader, 0):
         ############################
-        #First: update D network, therefore maximize log(D(x)) + log(1 - D(G(z)))
+        # First: update D network, therefore maximize log(D(x)) + log(1 - D(G(z)))
         
-        #train with real
+        # Train with real
         netD.zero_grad()
         real_image = data[0].to(device)
         batch_size = real_image.size(0)
@@ -121,7 +121,7 @@ for epoch in range(opt.niter):
         errD_real.backward()
         D_x = output.mean().item()
 
-        #train with fake
+        # Train with fake
         noise = torch.randn(batch_size, nz, 1, 1, device=device)
         fake = netG(noise)
         label.fill_(fake_label)
@@ -134,7 +134,7 @@ for epoch in range(opt.niter):
         ###########################
 
         ############################
-        #Second: update G network, therefore maximize log(D(G(z)))
+        # Second: update G network, therefore maximize log(D(G(z)))
         
         netG.zero_grad()
         label.fill_(real_label)  # fake labels are real for generator cost
@@ -145,7 +145,7 @@ for epoch in range(opt.niter):
         optimizerG.step()
         ###########################        
 
-        #Print the information and save real samples and generated images to compair each other
+        # Print the information and save real samples and generated images to compair each other
         print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f / %.4f'
               % (epoch, opt.niter, i, len(mtfl_loader),
                  errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
@@ -158,6 +158,6 @@ for epoch in range(opt.niter):
                     '%s/fake_samples_epoch_%03d.png' % (opt.outf, epoch),
                     normalize=True)
 
-    #do checkpointing
+    # Do checkpointing
     torch.save(netG.state_dict(), '%s/netG_folder/netG_epoch_%d.pth' % (opt.outf, epoch))
     torch.save(netD.state_dict(), '%s/netD_folder/netD_epoch_%d.pth' % (opt.outf, epoch))

@@ -82,7 +82,6 @@ class ComplexGenerator(nn.Module):
 
 
     def forward(self, input, cls):
-        #print(cls.size())
 
         # Replicate spatially and concatenate domain information.
         cls = cls.view(cls.size(0), 1, 1, 1)    #modified second entry from cls.size(1) to 1
@@ -96,7 +95,7 @@ class ComplexGenerator(nn.Module):
         return output
 
 
-## Single Generator network
+## Sinple Generator network
 class Generator(nn.Module):
     def __init__(self, ngpu, ngf, nz, nc):
         super(Generator, self).__init__()
@@ -285,7 +284,7 @@ class ComplexDiscriminator(nn.Module):
         return output_src.view(-1, 1).squeeze(1), output_cls.view(-1, 1).squeeze(1)
 
 
-## Single Discriminator (normalGAN and splitGAN setup)
+## Sinple Discriminator (simpleGAN and splitGAN setup)
 class Discriminator(nn.Module):
     def __init__(self, ngpu, nc, ndf):
         super(Discriminator, self).__init__()

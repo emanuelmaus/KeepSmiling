@@ -107,47 +107,47 @@ data_iter = iter(mtfl_loader)
 x_fixed,_ = next(data_iter)
 x_fixed = x_fixed.to(device)
 
-#Labels for real and fake
+# Labels for real and fake
 real_label = 1
 fake_label = 0
 
-#Define the learning rate
+# Define the learning rate
 lr_D = opt.lr
 lr_E = opt.lr
 lr_De = opt.lr
 
-# setup optimizer
+# Setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr= lr_D, betas=(opt.beta1, 0.999))
 optimizerE = optim.Adam(netE.parameters(), lr=lr_E, betas=(opt.beta1, 0.999))
 optimizerDe = optim.Adam(netDe.parameters(), lr=lr_De, betas=(opt.beta1, 0.999))
 
-#starttime
+# Start time
 start_time = time.time()
 
 for epoch in range(opt.nstart, opt.niter):
     for i, data in enumerate(mtfl_loader, 0):
         ############################
-        #First: update D network
+        # First: update D network
         
-        # train with real
+        # Train with real
         netD.zero_grad()
         x_real = data[0].to(device)
         
         batch_size = x_real.size(0)
         label = torch.full((batch_size,), real_label, device=device)
         
-        #Compute loss with real images
+        # Compute loss with real images
         output_x_real = netD(x_real)
         
         errD_real = criterion(output_x_real, label)
         
         D_x_real = output_x_real.mean().item()
         
-        #Compute feature_vector and its generated image
+        # Compute feature_vector and its generated image
         feature_vector = netE(x_real)
         x_fake = netDe(feature_vector)
         
-        #Train with fake images
+        # Train with fake images
         label_fake = label.clone().fill_(fake_label)
         output_x_fake = netD(x_fake.detach())
         D_x_fake = output_x_fake.mean().item()
@@ -165,7 +165,7 @@ for epoch in range(opt.nstart, opt.niter):
         # Backward and optimize.
         errD_all = errD_real + errD_fake + 3*errD_gp
 
-        #Reset the gradient buffers 
+        # Reset the gradient buffers 
         optimizerD.zero_grad()
         optimizerE.zero_grad()
         optimizerDe.zero_grad()
@@ -178,16 +178,16 @@ for epoch in range(opt.nstart, opt.niter):
         ############################
         #Second: update G network
         
-        #train the Generator (1xtraining Generator, 2xtraining Discriminator)
+        # Train the Generator (1xtraining Generator, 2xtraining Discriminator)
         if((i+1) % 2 == 0 or (i==0)):
-            #Original-to-rand domain
+            # Original-to-rand domain
             feature_vector = netE(x_real)
             x_fake = netDe(feature_vector)
                   		
             netE.zero_grad()
             netDe.zero_grad()
             
-            #Discriminate the fake image
+            # Discriminate the fake image
             label_real = label.clone().fill_(real_label)  # fake labels are real for generator cost
             output_x3 = netD(x_fake)
             D_G_x3 = output_x3.mean().item()
@@ -208,7 +208,7 @@ for epoch in range(opt.nstart, opt.niter):
             optimizerDe.step()
             optimizerE.step()
             
-			#Reset the gradient buffers 
+	    # Reset the gradient buffers 
             optimizerDe.zero_grad()
             optimizerE.zero_grad()
             optimizerD.zero_grad()
@@ -216,7 +216,7 @@ for epoch in range(opt.nstart, opt.niter):
             ############################   
                   
     
-        #Get Output(states and images)
+        # Get Output(states and images)
 
         print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z(x))): %.4f / %.4f D(x,G(x)) %.4f'
               % (epoch, opt.niter, i, len(mtfl_loader),
@@ -231,15 +231,15 @@ for epoch in range(opt.nstart, opt.niter):
                     '%s/fake_samples_epoch_%03d.png' % (opt.outf, epoch),
                     normalize=True)
     
-    #logger data per epoch
-    #Logging
-    #Diskriminator
+    # Logger data per epoch
+    # Logging
+    # Diskriminator
     loss = {}
     loss['D/loss_real'] = D_x_real
     loss['D/loss_fake'] = D_x_fake
     loss['D/loss_x_grad'] = D_x_grad    
 
-    #Generator
+    # Generator
     loss['G/loss_fake'] = D_G_x3
     loss['G/loss_rec'] = D_G_x_rec    
     
@@ -247,7 +247,7 @@ for epoch in range(opt.nstart, opt.niter):
     delta_t = str(delta_t)[:-5]
     log = "Elapsed [{}], Iteration [{}/{}]".format(delta_t, epoch+1,  opt.niter)
     
-    #Print the log
+    # Print the log
     for tag, value in loss.items():
         log += ", {}: {:.4f}".format(tag, value)
         logger.scalar_summary(tag, value, epoch+1)
@@ -260,7 +260,7 @@ for epoch in range(opt.nstart, opt.niter):
         lr_D -= (lr_D / float(70))
         lr_E -= (lr_E / float(70))
         lr_De -= (lr_De / float(70))
-        #Update the learning rates
+        # Update the learning rates
         for param_group in optimizerD.param_groups:
             param_group['lr'] = lr_D
         for param_group in optimizerE.param_groups:
@@ -272,7 +272,7 @@ for epoch in range(opt.nstart, opt.niter):
         print('Decayed learning rates, lr_D: {}, lr_E: {}, lr_De: {}.'.format(lr_D, lr_E, lr_De))
         print("####################")
 
-    # do checkpointing
+    # Do checkpointing
     torch.save(netDe.state_dict(), '%s/netDe_folder/netDe_epoch_%d.pth' % (opt.outf, epoch))
     torch.save(netE.state_dict(), '%s/netE_folder/netE_epoch_%d.pth' % (opt.outf, epoch))
     torch.save(netD.state_dict(), '%s/netD_folder/netD_epoch_%d.pth' % (opt.outf, epoch))
