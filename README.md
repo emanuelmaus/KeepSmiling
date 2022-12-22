@@ -1,6 +1,13 @@
 # KeepSmiling - Generative Adversarial Networks for Face Manipulation
 >Research project: KeepSmiling - Generative Adversarial Networks for Face Manipulation
 
+## Table of Contents
+1. [Description](#Description)
+2. [Dataset](#Dataset)
+3. [Dependencies](#Dependencies)
+4. [Results](#Results)
+5. [Acknowledgements](#Acknowledgements)
+
 ## Motivation
 
 The motivation for this project was to make everyone smile in photos. As it is common for group photos to have individuals who are not smiling, we used Generative Adversarial Networks (GANs) to transform non-smiling faces into smiling ones in a post-processing step. To achieve this, we tested different neural network setups and conducted various experiments on the trained networks.
@@ -27,6 +34,7 @@ During this project, several GAN-like setups were constructed and tested with th
 
 ## Dependencies
 
+To run the code in these projects, you will need to have the following dependencies installed:
 - `Python 2.7`
 - `Pytorch 1.0.0+`
 - `torchvision 0.2.1+`
@@ -103,8 +111,7 @@ lower dimensional latent vectors. The decoder network transforms these vectors b
 
 |  ![Results of the SplitGAN domain translation](docs/images/splitGAN_results_translation.png) |
 |:------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|**Domain translation results:** The left figure shows real samples of smiling
-mouths domain-translated to nonsmiling mouths and the right figure the opposite. Besides the effects of the reconstruction (light skin color bias) the domain translation preserves both background- and foreground regions and the main mouth features. In addition, the domain translation leads to a change of the main characteristics of smiling and nonsmiling mouths (lower mouth corners, no visible teeth vs. higher mouth corners, visible teeth).|
+|**Domain translation results:** The left figure shows real samples of smiling mouths (ORG) domain-translated to nonsmiling mouths (GEN) and the right figure the opposite. Besides the effects of the reconstruction (light skin color bias) the domain translation preserves both background- and foreground regions and the main mouth features. In addition, the domain translation leads to a change of the main characteristics of smiling and nonsmiling mouths (lower mouth corners, no visible teeth vs. higher mouth corners, visible teeth).|
 
 - **Conclusion:** The domain translation vector is based on the shift vector between the center of the two different domain regions. The results indicates, that this simple translation in the latent space can change the smiling state of the encoded image while preserving the main mouth characteristics and the background- and foreground regions. This proves the existence of a smiling and non-smiling domain in latent space. As the Encoder has no further information, whether input is smiling or not, implies, that the Encoder learns to cluster key features of a smiling mouth (high mouth corners and showing of teeth) and of a nonsmiling mouth (low mouth corners and closed mouth) in unsupervised manner.  Therefore, this setup is an ideal candidate for our KeepSmiling network and fulfills our ambition. Further improvement, like providing non- and smiling labels to the Generator, adding a contrastive learning to improve the latent space clustering and optimize the dataset, may lead to performance boost.
 
