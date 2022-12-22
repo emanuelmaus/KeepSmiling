@@ -2,9 +2,7 @@
 
 import torch.nn as nn
 
-
-
-## Generator network classes (rand-vector --> image)
+# Generator network classes (rand-vector --> image)
 
 ## Create a Residual Block for the Generator (splitGAN and complexGAN
 class ResidualBlock(nn.Module):
@@ -20,6 +18,46 @@ class ResidualBlock(nn.Module):
 
     def forward(self, x):
         return x + self.main(x)
+
+## Sinple Generator network
+class Generator(nn.Module):
+    def __init__(self, ngpu, ngf, nz, nc):
+        super(Generator, self).__init__()
+
+        self.ngpu = ngpu
+        self.ngf = ngf
+        self.nz = nz
+        self.nc = nc
+
+        self.main = nn.Sequential(
+            # input is Z, going into a convolution
+            nn.ConvTranspose2d(self.nz, self.ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(self.ngf * 8),
+            nn.ReLU(True),
+            # state size. (ngf*8) x 4 x 4
+            nn.ConvTranspose2d(self.ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ngf * 4),
+            nn.ReLU(True),
+            # state size. (ngf*4) x 8 x 8
+            nn.ConvTranspose2d(self.ngf * 4, self.ngf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ngf * 2),
+            nn.ReLU(True),
+            # state size. (ngf*2) x 16 x 16
+            nn.ConvTranspose2d(self.ngf * 2,     self.ngf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ngf),
+            nn.ReLU(True),
+            # state size. (ngf) x 32 x 32
+            nn.ConvTranspose2d(    self.ngf,      self.nc, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # state size. (nc) x 64 x 64
+        )
+
+    def forward(self, input):
+        if input.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
+        else:
+            output = self.main(input)
+        return output
 
 ## More comeplex structured Generator network (complexGAN setup)
 class ComplexGenerator(nn.Module):
@@ -94,49 +132,8 @@ class ComplexGenerator(nn.Module):
             output = self.main(input)
         return output
 
-
-## Sinple Generator network
-class Generator(nn.Module):
-    def __init__(self, ngpu, ngf, nz, nc):
-        super(Generator, self).__init__()
-
-        self.ngpu = ngpu
-        self.ngf = ngf
-        self.nz = nz
-        self.nc = nc
-
-        self.main = nn.Sequential(
-            # input is Z, going into a convolution
-            nn.ConvTranspose2d(self.nz, self.ngf * 8, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(self.ngf * 8),
-            nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(self.ngf * 8, ngf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ngf * 4),
-            nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(self.ngf * 4, self.ngf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ngf * 2),
-            nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(self.ngf * 2,     self.ngf, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ngf),
-            nn.ReLU(True),
-            # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d(    self.ngf,      self.nc, 4, 2, 1, bias=False),
-            nn.Tanh()
-            # state size. (nc) x 64 x 64
-        )
-
-    def forward(self, input):
-        if input.is_cuda and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
-        else:
-            output = self.main(input)
-        return output
-
 ## Encoder and Decoder model for the splitGAN experiment
-#Encoder
+### Encoder
 class Encoder(nn.Module):
     def __init__(self, ngpu, nc, conv_dim=32, repeat_num=2):
         super(Encoder, self).__init__()
@@ -179,7 +176,7 @@ class Encoder(nn.Module):
             output = self.main(input)
         return output
 
-#Decoder
+### Decoder
 class Decoder(nn.Module):
     def __init__(self, ngpu, nc,  ngf,  curr_dim=128, conv_dim=32, repeat_num=2):
         super(Decoder, self).__init__()
@@ -223,7 +220,46 @@ class Decoder(nn.Module):
         return output
 
 
-## Discriminator (discriminates if fake or real image)
+# Discriminator (discriminates if fake or real image)
+
+## Sinple Discriminator (simpleGAN and splitGAN setup)
+class Discriminator(nn.Module):
+    def __init__(self, ngpu, nc, ndf):
+        super(Discriminator, self).__init__()
+
+        self.ngpu = ngpu
+        self.nc = nc
+        self.ndf = ndf
+
+        self.main = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(self.nc, self.ndf, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(self.ndf, self.ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(self.ndf * 2, self.ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ndf * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(self.ndf * 4, self.ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(self.ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*8) x 4 x 4
+            nn.Conv2d(self.ndf * 8, 1, 4, 1, 0, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, input):
+        if input.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
+        else:
+            output = self.main(input)
+
+        return output.view(-1, 1).squeeze(1)
+
 
 ## ComplexDiscriminator for the complexGAN setup
 class ComplexDiscriminator(nn.Module):
@@ -282,44 +318,3 @@ class ComplexDiscriminator(nn.Module):
             output_src = self.sequential_fake(input)
             output_cls = self.sequential_smile(input)
         return output_src.view(-1, 1).squeeze(1), output_cls.view(-1, 1).squeeze(1)
-
-
-## Sinple Discriminator (simpleGAN and splitGAN setup)
-class Discriminator(nn.Module):
-    def __init__(self, ngpu, nc, ndf):
-        super(Discriminator, self).__init__()
-
-        self.ngpu = ngpu
-        self.nc = nc
-        self.ndf = ndf
-
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
-            nn.Conv2d(self.nc, self.ndf, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 32 x 32
-            nn.Conv2d(self.ndf, self.ndf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ndf * 2),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(self.ndf * 2, self.ndf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ndf * 4),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*4) x 8 x 8
-            nn.Conv2d(self.ndf * 4, self.ndf * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(self.ndf * 8),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*8) x 4 x 4
-            nn.Conv2d(self.ndf * 8, 1, 4, 1, 0, bias=False),
-            nn.Sigmoid()
-        )
-
-    def forward(self, input):
-        if input.is_cuda and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
-        else:
-            output = self.main(input)
-
-        return output.view(-1, 1).squeeze(1)
-
-
