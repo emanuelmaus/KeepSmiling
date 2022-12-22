@@ -43,7 +43,7 @@ The results of the different DCGAN setups are described briefly below:
 
 ### SimpleGAN
 - **Code used:**  [`main_simpleGAN.py`](main_simpleGAN.py)
-- **Model:** DCGAN setup ([Generator](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L23) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L226))
+- **Model:** DCGAN setup ([Generator](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L23) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L226))
 - **Objective:** Train the setup on only smiling images to test if the Generator network can produce realistic smiling mouths.
 
 |  ![Results of the SimpleGAN experiments](docs/images/simpleGAN_results.png) |
@@ -56,7 +56,7 @@ The results of the different DCGAN setups are described briefly below:
 ### ComplexGAN
 
 - **Code used:**  [`main_complexGAN.py`](main_complexGAN.py)
-- **Model:** StarGAN setup ([Generator](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L63) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L265))
+- **Model:** StarGAN setup ([Generator](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L63) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L265))
 - **Objective:** Train the setup on non- and smiling images with additional target labels for the Generator's output. Using this setup, the user can force the Generator network to generate the smiling copies of the nonsmiling input images through the target labels.
 
 
@@ -71,7 +71,7 @@ The results of the different DCGAN setups are described briefly below:
 #### Reconstruction
 
 - **Code used:**  [`main_splitGAN.py`](main_splitGAN.py)
-- **Model:** Networks based on StarGAN (Generator ([Encoder](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L137) + [Decoder](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L180)) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L226))
+- **Model:** Networks based on StarGAN (Generator ([Encoder](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L137) + [Decoder](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L180)) and [Discriminator](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L226))
 - **Objective:** Train the setup on non- and smiling images using a Generator that is split into an Encoder and Decoder network. The Encoder maps each input image to a latent vector and the Decoder transforms it back to a reconstruction of the original input image. This setup enables the possibility to operate in latent space and convert a nonsmile-to-smile transformation into a simple latent space translation.
 
 |  ![Results of the SplitGAN reconstruction](docs/images/splitGAN_results_reconstruction.png) |
@@ -86,7 +86,7 @@ The results of the different DCGAN setups are described briefly below:
 	- Encode and store all latent vectors of the dataset: [`encoder_splitGAN.py`](encoder_splitGAN.py)
 	- Calculate certain statistical characteristics of the latent vectors of the smiling and nonsmiling domains: [`feature_vectors_calculations.py`](feature_vectors_calculations.py)
 	-  Encode nonsmiling images, translate their encoded latent vectors to the smiling domain region, and decode them: [`translation_splitGAN.py`](translation_splitGAN.py)
-- **Model:** Previously trained Generator ([Encoder](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L137) + [Decoder](https://github.com/emanuelmaus/KeepSmiling/blob/2e4777c51aa3e3da6e46e8b0ddcbcd12d9922d15/model.py#L180))
+- **Model:** Previously trained Generator ([Encoder](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L137) + [Decoder](https://github.com/emanuelmaus/KeepSmiling/blob/683498b47588bf66d0ffda0d20a101b6de04daaf/model.py#L180))
 - **Objective:** Use the trained Generator to encode all smiling and nonsmiling images to its latent vectors. Determine the translation vector between the latent vector centers of the two different domains. If smiles and nonsmiles are encoded in different regions, adding this translation vector leads to a domain shift and a nonsmiling mouth can be transformed to a smiling one and vice versa, potentially even preserving certain characteristics of the original nonsmiling images.
 
 |  ![Results of the SplitGAN domain translation](docs/images/splitGAN_results_translation.png) |
